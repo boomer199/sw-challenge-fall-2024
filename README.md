@@ -30,9 +30,7 @@ The program saves the generated OHLCV data to a CSV file.
 
 ## How to Use
 
-1. **Prepare the Data Directory**: Ensure that your CSV files are placed in the `./data` directory. The files should follow the naming convention `ctg_tick_YEARMONTH_MINUTE_RandomString.csv`.
-
-2. **Run the Program**: Execute the program with the following command:
+1. **Run the Program**: Execute the program with the following command:
    ```sh
    python main.py <start_date> <start_time> <end_date> <end_time> <interval>
    ```
@@ -42,7 +40,7 @@ The program saves the generated OHLCV data to a CSV file.
    - `<end_time>`: The end time in `HH:MM:SS` format.
    - `<interval>`: The time interval for OHLCV data (e.g., `1m` for 1 minute, `5m` for 5 minutes).
 
-3. **Output**: The program will generate an `ohlcv_data.csv` file containing the OHLCV data for the specified timeframe and interval.
+2. **Output**: The program will generate an `ohlcv_data.csv` file containing the OHLCV data for the specified timeframe and interval.
 
 ## Example
 
