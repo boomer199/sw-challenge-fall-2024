@@ -102,7 +102,6 @@ def clean_data(data):
 
 cleaned_data = clean_data(combined_data)
 
-# Parse the interval
 def parse_interval(interval_str):
     units = {'d': 'days', 'h': 'hours', 'm': 'minutes', 's': 'seconds'}
     time_params = {'days': 0, 'hours': 0, 'minutes': 0, 'seconds': 0}
@@ -113,14 +112,57 @@ def parse_interval(interval_str):
             num += char
         elif char in units:
             if num:
-                time_params[units[char]] = int(num)
+                time_params[units[char]] += int(num)  # Use += to accumulate time units
                 num = ''
             else:
                 raise ValueError(f"Invalid interval format: {interval_str}")
         else:
             raise ValueError(f"Invalid character in interval format: {char}")
     
+    if num:  # Handle the case where the string ends with a number
+        raise ValueError(f"Invalid interval format: {interval_str}")
+    
     return timedelta(**time_params)
+
+
+def round_time(dt, delta):
+    """Round a datetime object to the nearest interval."""
+    round_to = delta.total_seconds()
+    seconds = (dt - dt.min).seconds
+    # Round to the nearest interval
+    rounding = (seconds + round_to / 2) // round_to * round_to
+    return dt + timedelta(0, rounding - seconds, -dt.microsecond)
+
+
+def generate_ohlcv(data, interval):
+    interval_td = parse_interval(interval)
+    ohlcv_data = []
+    current_interval_start = None
+    current_ohlcv = None
+
+    for row in data:
+        timestamp = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
+        timestamp = round_time(timestamp, interval_td)  # Round the timestamp to the nearest interval
+        price = float(row[1])
+        volume = int(row[2])
+
+        if current_interval_start is None:
+            current_interval_start = timestamp
+            current_ohlcv = [timestamp, price, price, price, price, volume]
+        elif timestamp >= current_interval_start + interval_td:
+            ohlcv_data.append(current_ohlcv)
+            current_interval_start = timestamp
+            current_ohlcv =1
+        else:
+            current_ohlcv[2] = max(current_ohlcv[2], price)  # High
+            current_ohlcv[3] = min(current_ohlcv[3], price)  # Low
+            current_ohlcv[4] = price  # Close
+            current_ohlcv[5] += volume  # Volume
+
+    if current_ohlcv:
+        ohlcv_data.append(current_ohlcv)
+
+    return ohlcv_data
 
 # Filter the data by timeframe
 def filter_data_by_timeframe(data, start_time, end_time):
@@ -141,38 +183,6 @@ def filter_data_by_timeframe(data, start_time, end_time):
     
 
     return filtered_data
-
-def generate_ohlcv(data, interval):
-    interval_td = parse_interval(interval)
-    ohlcv_data = []
-    current_interval_start = None
-    current_ohlcv = None
-
-    for row in data:
-        timestamp = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
-        # Round the timestamp to the start of the minute
-        timestamp = timestamp.replace(second=0, microsecond=0)
-        price = float(row[1])
-        volume = int(row[2])
-
-        if current_interval_start is None:
-            current_interval_start = timestamp
-            current_ohlcv = [timestamp, price, price, price, price, volume]
-        elif timestamp >= current_interval_start + interval_td:
-            ohlcv_data.append(current_ohlcv)
-            current_interval_start = timestamp
-            current_ohlcv = [timestamp, price, price, price, price, volume]
-        else:
-            current_ohlcv[2] = max(current_ohlcv[2], price)  # High
-            current_ohlcv[3] = min(current_ohlcv[3], price)  # Low
-            current_ohlcv[4] = price  # Close
-            current_ohlcv[5] += volume  # Volume
-
-    if current_ohlcv:
-        ohlcv_data.append(current_ohlcv)
-
-    return ohlcv_data
-
 
 def save_to_csv(data, filename):
     with open(filename, 'w') as file:
