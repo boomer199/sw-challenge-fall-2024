@@ -16,7 +16,7 @@ def read_csv(file_path):
 
 # Process the data from the CSV files
 def process_data():
-    # Define the directory containing the CSV files
+    # Define the directory containing the CSV file
     data_dir = './data'
     
     # Convert to absolute path
@@ -130,6 +130,7 @@ def filter_data_by_timeframe(data, start_time, end_time):
     print(f"Start datetime: {start_dt}, End datetime: {end_dt}")  # Debugging line
     
     filtered_data = []
+    #O(n) - probably a better way to do this but this is the most readable and easiest (also the file size isnt huge do it doesnt matter that much)
     for row in data:
         try:
             row_time = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
@@ -171,6 +172,7 @@ def generate_ohlcv(data, interval):
         ohlcv_data.append(current_ohlcv)
 
     return ohlcv_data
+
 
 def save_to_csv(data, filename):
     with open(filename, 'w') as file:
